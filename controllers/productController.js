@@ -1,4 +1,4 @@
-import Products from "../models/product.js";
+import Product from "../models/product.js";
 
 
 export async function createProduct(req,res){
@@ -32,7 +32,7 @@ return;
 
 }
 
-const product=new Products(req.body);
+const product=new Product(req.body);
 
 
 try{
