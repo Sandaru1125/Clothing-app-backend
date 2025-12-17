@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import userRouter from "./routers/userRouter.js";
-import productRouter from "./routers/productRouter.js";
+import { publicUserRouter, protectedUserRouter } from "./routers/userRouter.js";
+import { publicProductRouter, protectedProductRouter } from "./routers/productRouter.js";
 import orderRouter from "./routers/orderRouter.js";
 import verifyJwt from "./middleware/auth.js";
 
@@ -32,12 +32,16 @@ mongoose
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.log("❌ Database connection failed:", err.message));
 
-// 4️⃣ PUBLIC ROUTES — No JWT needed
-app.use("/api/user", userRouter);
+// 4️⃣ User routes
+app.use("/api/user", publicUserRouter);
+app.use("/api/user", verifyJwt, protectedUserRouter);
 
-// 5️⃣ PROTECTED ROUTES — JWT required
-app.use("/api/product", verifyJwt, productRouter);
+// 5️⃣ Order routes
 app.use("/api/order", verifyJwt, orderRouter);
+
+// 6️⃣ Product routes
+app.use("/api/products", publicProductRouter); // Public: GET /api/products and GET /api/products/:id
+app.use("/api/product", verifyJwt, protectedProductRouter); // Protected: POST, PUT, DELETE /api/product
 
 // 6️⃣ Health check route
 app.get("/", (req, res) => {

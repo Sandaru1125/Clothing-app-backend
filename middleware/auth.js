@@ -16,6 +16,6 @@ export default function verfyjwt(req, res, next) {
             next();
         });
     } else {
-        next();
+        res.status(401).json({ message: "Authorization header missing" });
     }
 }

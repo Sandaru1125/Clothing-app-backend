@@ -13,10 +13,12 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    category: {
-        type: String,
-        required: true
-    },
+   category: {
+  type: String,
+  required: true,
+  enum: ["men", "women", "kids"]
+}
+,
     imageUrl: {
         type: String,
         required: true

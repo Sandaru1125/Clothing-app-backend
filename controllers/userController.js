@@ -108,33 +108,25 @@ else{
 const isPasswordCorrect=bcrypt.compareSync(password,user.password)
 
 if(isPasswordCorrect){
-
-{
-const useData={
-
-email:user.email,
-firstName:user.firstName,
-lastName:user.lastName,
-role:user.role,
-phone:user.phone,
-isDisable:user.isDisable,
-isEmailVerified:user.isEmailVerified
-
-
-}
-
-const token=jwt.sign(useData,process.env.JWT_KEY)
-
-res.json({
-message:"login successfully",
-token:token,
-user:useData
-
-});
-
-}
-
-
+    User.findOne({email: email}).then(
+        (user) => {
+            const useData={
+                email:user.email,
+                firstName:user.firstName,
+                lastName:user.lastName,
+                role:user.role,
+                phone:user.phone,
+                isDisable:user.isDisable,
+                isEmailVerified:user.isEmailVerified
+            }
+            const token=jwt.sign(useData,process.env.JWT_KEY)
+            res.json({
+                message:"login successfully",
+                token:token,
+                user:useData
+            });
+        }
+    )
 }
 else{
 

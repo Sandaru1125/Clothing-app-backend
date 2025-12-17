@@ -1,189 +1,137 @@
 import Product from "../models/product.js";
 
+/* =========================
+   CREATE PRODUCT (ADMIN)
+========================= */
+export async function createProduct(req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: "You need to login first",
+    });
+  }
 
-export async function createProduct(req,res){
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "You are not authorized to create products",
+    });
+  }
 
-if(req.user==null){
+  try {
+    const product = new Product(req.body);
+    await product.save();
 
-res.status(403).json({
-
-message:"you nedd to login first"
-//sssss
-
-
-})
- 
-return;
-
-
-}
-
-
-if(req.user.role !="admin"){
-
-
-res.status(403).json({
-
-message:"you are not authorized tocreate products"
-
-
-})
-return;
-
-}
-
-const product=new Product(req.body);
-
-
-try{
-
-    await product.save()
-
-}catch(err){
-
-    console.error("Error saving product:", err);
+    res.status(201).json({
+      message: "Product created successfully",
+      product,
+    });
+  } catch (err) {
     res.status(500).json({
-
-message:"product not saved",
-error: err.message,
-
-    })
-
+      message: "Product not saved",
+      error: err.message,
+    });
+  }
 }
 
+/* =========================
+   GET PRODUCTS (PUBLIC)
+   ?category=men|women|kids
+========================= */
+export async function getProduct(req, res) {
+  try {
+    const { category } = req.query;
+
+    const filter = category ? { category } : {};
+
+    const products = await Product.find(filter);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({
+      message: "Products not found",
+    });
+  }
 }
 
+/* =========================
+   GET PRODUCT BY ID
+========================= */
+export async function getProductById(req, res) {
+  try {
+    const product = await Product.findById(req.params.id);
 
-export function getProduct(req,res){
-Products.find().then(
-
-(product)=>{
-
-    res.json(product)
-}
-
-).catch(
-(err)=>{
-
-res.status(500).json({
-
-message:"product not found"
-
-
-})
-
-
-}
-
-)
-
-
-
-
-
-}
-
-
-export async function getProductById(req,res){
-
-const productId=req.params.id
-const product=await Products.findOne({productId:productId})
-if(product==null){
-
-res.status(404).json({
-message:"product not found"
-})
-return
-}
-res.json({
-
-product:product
-})
-
-  
-}
-
-export function deleteProduct(req,res){
-
-if(req.user==null){
-res.status(403).json({
-
-message:"you need to login first"
-
-
-
-})
-
-return;
-
-
-}
-
-if(req.user.role != "admin"){
-    res.status(403).json({
-        message : "You are not authorized to delete a product"
-    })
-    return;
-}
-Products.findOneAndDelete({
-    productId : req.params.productId
-}).then(
-    ()=>{
-        res.json({
-            message : "Product deleted successfully"
-        })
-    }
-).catch(
-    (err)=>{
-        res.status(500).json({
-            message : "Product not deleted"
-        })
-    }
-)
-
-
-}
-
-
-
-
-
-export function updateProducts(req,res){
-    if(req.user == null){
-        res.status(403).json({
-            message : "You need to login first"
-        })
-        return;
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
     }
 
-    if(req.user.role != "admin"){
-        res.status(403).json({
-            message : "You are not authorized to update a product"
-        })
-        return;
-    }
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({
+      message: "Error fetching product",
+    });
+  }
+}
 
-    Products.findOneAndUpdate({
-        productId : req.params.productId
-    },req.body).then(
-        ()=>{
-            res.json({
-                message : "Product updated successfully"
-            })
-        }
-    ).catch(
-        (err)=>{
-            res.status(500).json({
-                message : "Product not updated"
-            })
-        }
-    )
+/* =========================
+   DELETE PRODUCT (ADMIN)
+========================= */
+export async function deleteProduct(req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: "You need to login first",
+    });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "You are not authorized to delete products",
+    });
+  }
+
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({
+      message: "Product deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Product not deleted",
+    });
+  }
+}
+
+/* =========================
+   UPDATE PRODUCT (ADMIN)
+========================= */
+export async function updateProduct(req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: "You need to login first",
+    });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "You are not authorized to update products",
+    });
+  }
+
+  try {
+    await Product.findByIdAndUpdate(req.params.id, req.body);
+    res.json({
+      message: "Product updated successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Product not updated",
+    });
+  }
 }
 
 export default {
-    createProduct,
-    getProduct,
-    getProductById,
-    deleteProduct,
-    updateProducts,
+  createProduct,
+  getProduct,
+  getProductById,
+  deleteProduct,
+  updateProduct,
 };

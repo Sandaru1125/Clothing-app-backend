@@ -3,12 +3,16 @@ import userController from "../controllers/userController.js";
 
 const { getAllUsers, getCurrentUser, googleLogin, loginUsers, saveUser } = userController;
 
-const userRouter = express.Router();
+const publicUserRouter = express.Router();
+const protectedUserRouter = express.Router();
 
-userRouter.post("/", saveUser);
-userRouter.post("/login", loginUsers);
-userRouter.post("/google", googleLogin);
-userRouter.get("/current", getCurrentUser);
-userRouter.get("/", getAllUsers);
+// Public routes
+publicUserRouter.post("/", saveUser);
+publicUserRouter.post("/login", loginUsers);
+publicUserRouter.post("/google", googleLogin);
 
-export default userRouter;
+// Protected routes
+protectedUserRouter.get("/current", getCurrentUser);
+protectedUserRouter.get("/", getAllUsers);
+
+export { publicUserRouter, protectedUserRouter };
