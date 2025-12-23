@@ -1,202 +1,89 @@
 import Order from "../models/order.js";
 import Product from "../models/product.js";
 
-export async function createOrder(req,res){
+async function createOrder(req, res) {
+  try {
+    const { product: productId, name, phone, address, city } = req.body;
 
-
-if(req.user==null){
-
-
-res.status(401).json({
-
-message:"unauthorized"
-
-
-})
-return;
-
-}
-
-
-const body=req.body;
-const orderData={
-    orderID:"",
-    email:req.user.email,
-    name:body.name,
-    address:body.address,
-    phoneNumber:body.phoneNumber,
-    billItems:[],
-    total:0
-
-
-
-};
-
-const lastBill=Order.find().sort({
-
-    date:-1
-}).limit(1).then( async(lastBills)=>{
-
-    if(lastBills.length==0){
-
-        orderData.orderID="ORD001";
-        }else{
-        
-        
-        const lastBill=lastBills[0];
-        
-        const lastOrderId=lastBill.orderID;
-        
-        const lastOrderNumber=lastOrderId.replace("ORD","");
-        const lastOrderNumberInt=parseInt(lastOrderNumber);
-        const newOrderNumber=lastOrderNumberInt+1;
-        const newOrderNumberStr=newOrderNumber.toString().padStart(4,"0");
-        orderData.orderID="ORD"+newOrderNumberStr;
-        }
-        
-
-      for(let i=0;i<body.billItems.length;i++){
-
-        const product=await Products.findOne({productId:body.billItems[i].productId});
-
-if(product==null){
-
-res.status(404).json({
-message:"product with product id"+body.billItems[i].productId+"not found"
-})
-return;
-}
-
- orderData.billItems[i]={
-
-    productId:product.productId,
-    productName:product.name,
-    Image:product.images[0],
-    quantity:body.billItems[i].quantity,
-    price:product.price
-
-
-
- }
-
- orderData.total+=product.price*body.billItems[i].quantity
-
-
-
-        
-      }
-
-        const order=new Order(orderData);
-        order.save().then(()=>{
-        
-        res.json({
-        
-        message:"order saved successfully"
-        
-        
-        })
-        }).catch((err)=>{
-        
-        res.status(500).json({
-        
-        
-        message:"order not created"
-        
-        
-        })
-
-});
-
-
-
-
-
-
-})
-}
-
-export function getOrders(req,res){
-    if(req.user==null){
-
-        res.status(401).json({
-
-            message:"unauthorized"
-
-
-            })
-            return;
-            }
-
-            if(req.user.role=="admin"){    
-               Order.find().then((orders)=>{
-                   res.json(orders)
-               }).catch((err)=>{
-
-                   res.status(500).json({
-                       message:"orders not found"
-                   })
-            }
-            
-                
-                )
-            }else{
-                Order.find({
-                    email:req.user.email
-                }).then((orders)=>{
-                    res.json(orders)
-                }).catch((err)=>{
-
-                    res.status(500).json({
-                        message:"orders not found"
-                    })
-                })
-            }
+    if (!productId || !name || !phone || !address || !city) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-export async function updateOrder(req,res){
-
-        try{
-
-            if(req.user==null){
-                res.status(401).json({
-                    message:"unauthorized"
-                })
-                return;
-            }
-
-
-               if(req.user.role!="admin"){
-                res.status(403).json({
-                    message:"you are not unauthorized to update order"
-                })
-                return;
-            }
-          
-
-            const orderID=req.params.orderID;
-            const order=await Order.findOneAndUpdate({orderID:orderID},req.body);
-            if(order==null){
-                res.status(404).json({
-                    message:"order not found"
-                })
-                return;
-            }
-            res.json({
-                message:"order updated successfully"
-            })
-        }catch(err){
-            res.status(500).json({
-                message:"order not updated"
-            })
-        }
-
-           
-
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ message: `Product with id ${productId} not found` });
     }
+
+    // Generate a unique order ID
+    let orderID = "ORD0001";
+    const lastOrder = await Order.findOne().sort({ date: -1 });
+    if (lastOrder && lastOrder.orderID) {
+      const lastId = parseInt(lastOrder.orderID.replace("ORD", ""), 10);
+      orderID = `ORD${(lastId + 1).toString().padStart(4, "0")}`;
+    }
+
+    const orderData = {
+      orderID,
+      // email: req.user.email, // Temporarily removed for simplicity
+      name,
+      address: `${address}, ${city}`,
+      phoneNumber: phone,
+      billItems: [
+        {
+          product: product._id,
+          quantity: 1, // Assuming quantity is always 1 for "Buy Now"
+        },
+      ],
+      total: product.price, // Total is just the product price
+    };
+
+    const order = new Order(orderData);
+    await order.save();
+
+    res.status(201).json({ message: "Order created successfully", order });
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(500).json({ message: "Error creating order", error });
+  }
+}
+
+async function getOrders(req, res) {
+  try {
+    // Not checking for user, fetching all orders.
+    const orders = await Order.find().populate("billItems.product");
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching orders", error });
+  }
+}
+
+async function updateOrder(req, res) {
+  try {
+    const { orderID } = req.params;
+    const { status } = req.body; // Assuming you just update the status
+
+    // Not checking for user role for simplicity
+    const order = await Order.findOneAndUpdate(
+      { orderID },
+      { status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json({ message: "Order updated successfully", order });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating order", error });
+  }
+}
 
 export default {
-    createOrder,
-    getOrders,
-    updateOrder,
+  createOrder,
+  getOrders,
+  updateOrder,
 };
 

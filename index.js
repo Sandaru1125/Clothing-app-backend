@@ -37,7 +37,7 @@ app.use("/api/user", publicUserRouter);
 app.use("/api/user", verifyJwt, protectedUserRouter);
 
 // 5️⃣ Order routes
-app.use("/api/order", verifyJwt, orderRouter);
+app.use("/api/orders", orderRouter);
 
 // 6️⃣ Product routes
 app.use("/api/products", publicProductRouter); // Public: GET /api/products and GET /api/products/:id
